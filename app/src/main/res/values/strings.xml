@@ -2,6 +2,6 @@
     <string name="app_name">BusinessCard</string>
     <string name="name">Alice</string>
     <string name="email">Alice@gmail.com</string>
-    <string name="phone">123-456-7890</string>
+    <string name="phone">123.456.7890</string>
     <string name="linkedin">linkedin.com/Alice</string>
 </resources>
