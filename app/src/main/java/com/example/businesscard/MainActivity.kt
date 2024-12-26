@@ -3,6 +3,7 @@ package com.example.businesscard
 import android.content.res.Configuration
 import android.graphics.Paint.Align
 import android.os.Bundle
+import android.view.RoundedCorner
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -10,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +21,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,9 +45,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +69,7 @@ class MainActivity : ComponentActivity() {
                         stringResource(R.string.phone),
                         stringResource(R.string.linkedin),
                         painterResource(R.drawable.profile_pic),
+                        painterResource(R.drawable.qr_code),
                         background = colorResource(R.color.lilac),
                         modifier = Modifier.padding(innerPadding).fillMaxSize(),
                     )
@@ -61,32 +79,66 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun BusinessCard(name: String, email: String, phone: String, linkedin: String,
-                               picture: Painter, background: Color, modifier: Modifier) {
+    fun BusinessCard(
+        name: String,
+        email: String,
+        phone: String,
+        linkedin: String,
+        primaryPicture: Painter,
+        secondaryPicture: Painter,
+        background: Color,
+        modifier: Modifier
+    ) {
         val configuration = LocalConfiguration.current
         when (configuration.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                BusinessCardHorizontal(name, email, phone, linkedin, picture, background, modifier)
+                BusinessCardHorizontal(name, email, phone, linkedin,
+                    primaryPicture, secondaryPicture, background, modifier)
             }
             else -> {
-                BusinessCardVertical(name, email, phone, linkedin, picture, background, modifier)
+                BusinessCardVertical(name, email, phone, linkedin,
+                    primaryPicture, secondaryPicture, background, modifier)
             }
         }
     }
 
 
     @Composable
-    fun BusinessCardHorizontal(name: String, email: String, phone: String, linkedin: String,
-                             picture: Painter, background: Color, modifier: Modifier) {
+    fun BusinessCardHorizontal(
+        name: String,
+        email: String,
+        phone: String,
+        linkedin: String,
+        primaryPicture: Painter,
+        secondaryPicture: Painter,
+        background: Color,
+        modifier: Modifier
+    ) {
+        var profileIsToggled: Int by rememberSaveable { mutableStateOf(0)}
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxSize()
                 .background(background)
+                .horizontalScroll(rememberScrollState())
 //                .padding(start = 60.dp, end = 90.dp)
         ){
-            Profile(name, picture, Modifier.weight(1.5f))
+            if(profileIsToggled == 0) {
+                Profile(
+                    name,
+                    primaryPicture,
+                    { profileIsToggled = (profileIsToggled + 1) % 2 },
+                    Modifier.weight(1.5f)
+                )
+            } else {
+                Profile(
+                    name,
+                    secondaryPicture,
+                    { profileIsToggled = (profileIsToggled + 1) % 2 },
+                    Modifier.weight(1.5f)
+                )
+            }
             ContactInfoCard(phone, email, linkedin, Modifier.weight(1.0f))
         }
     }
@@ -101,6 +153,7 @@ class MainActivity : ComponentActivity() {
                 "123-456-7890",
                 "linkedin.com/Alice",
                 painterResource(R.drawable.profile_pic),
+                painterResource(R.drawable.qr_code),
                 background = Color(0xFFEADDFF),
                 Modifier.fillMaxSize()
             )
@@ -108,8 +161,18 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun BusinessCardVertical(name: String, email: String, phone: String, linkedin: String,
-                     picture: Painter, background: Color, modifier: Modifier) {
+    fun BusinessCardVertical(
+        name: String,
+        email: String,
+        phone: String,
+        linkedin: String,
+        primaryPicture: Painter,
+        secondaryPicture: Painter,
+        background: Color,
+        modifier: Modifier
+    ) {
+        //TODO hoist profileIsToggled to a single variable in BusinessCard
+        var profileIsToggled: Int by rememberSaveable { mutableStateOf(0)}
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -117,8 +180,23 @@ class MainActivity : ComponentActivity() {
                 .fillMaxSize()
                 .background(background)
                 .padding(start = 60.dp, end = 60.dp, top = 100.dp, bottom = 100.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Profile(name, picture, Modifier.padding(bottom = 32.dp))
+            if(profileIsToggled == 0) {
+                Profile(
+                    name,
+                    primaryPicture,
+                    { profileIsToggled = (profileIsToggled + 1) % 2 },
+                    Modifier.padding(bottom = 32.dp)
+                )
+            } else {
+                Profile(
+                    name,
+                    secondaryPicture,
+                    { profileIsToggled = (profileIsToggled + 1) % 2 },
+                    Modifier.padding(bottom = 32.dp)
+                )
+            }
             ContactInfoCard(phone, email, linkedin, Modifier)
         }
 
@@ -134,27 +212,48 @@ class MainActivity : ComponentActivity() {
                 "123-456-7890",
                 "linkedin.com/Alice",
                 painterResource(R.drawable.profile_pic),
+                painterResource(R.drawable.qr_code),
                 background = Color(0xFFEADDFF),
                 Modifier.fillMaxSize()
             )
         }
     }
 
-
-        @Composable
-    fun Profile(name: String, picture: Painter, modifier: Modifier) {
+    @Composable
+    fun Profile(
+        name: String,
+        picture: Painter,
+        onClick: () -> Unit,
+        modifier: Modifier
+    ) {
+//        var nameField: String by remember { mutableStateOf(name)}
         Box(
             contentAlignment = Alignment.Center,
-            modifier = modifier,
+            modifier = modifier
         ) {
-            Image(
-                painter = picture,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+            Button(
+                onClick = onClick,
+                shape = RoundedCornerShape(4.dp),
+//                shape = CircleShape,
                 modifier = Modifier
-                    .size(208.dp)
-                    .border(BorderStroke(1.dp, Color.Black))
-            )
+                        .size(208.dp)
+            ){
+                Image(
+                    painter = picture,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .requiredSize(208.dp)
+                )
+            }
+//            TextField(
+//                value = nameField,
+//                singleLine = true,
+//                textStyle = TextStyle(fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
+//                onValueChange = { nameField = it },
+//                label = {},
+//                modifier = Modifier.padding(top = 248.dp)
+//            )
             Text(
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp,
